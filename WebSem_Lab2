@@ -1,0 +1,346 @@
+LAB2	WEBSEM		2017
+
+Hamdi Ammar, Hanna Johansson 
+2017-04-13
+Total time spent: 6 h
+
+------------------------------------
+	Part I: The RDF Knowledge Base
+------------------------------------
+
+2)
+Namespace for the individuals: http://www.inria.fr/2007/09/11/humans.rdfs
+
+Prefix : humans
+
+3)
+Namespace for RDF schema: http://www.w3.org/2000/01/rdf-schema#
+
+Prefix : rdfs
+
+4)
+Information about John:
+
+<http://www.inria.fr/2007/09/11/humans.rdfs-instances#John> a :Person ;
+	:age "37" ;
+	:hasParent <http://www.inria.fr/2007/09/11/humans.rdfs-instances#Sophie> ;
+	:name "John" ;
+	:shirtsize "12" ;
+	:shoesize "14" ;
+	:trouserssize "44" .
+
+
+------------------------------------
+	Part II: SPARQL 101
+------------------------------------
+
+3)
+Meaning of the query: Select variable x and t where the type of x is t
+
+We got 2 tables, ?x and ?t
+
+We get exactly 69 answers using COUNT :
+
+select ?x ?t (count(?x) as ?count) where {
+	?x rdf:type ?t
+}
+
+John types: Animal, Male, Person, using FILTER:
+
+select ?x ?t where {
+	?x rdf:type ?t.
+	FILTER (?x=<http://www.inria.fr/2007/09/11/humans.rdfs-instances#John>) .
+}
+
+
+4)
+Meaning of the query: Select all humans(?x) that has spouses (?y),?x is related to ?y with property hasSpouse.
+
+We got 6 answers.
+
+5) RDF property used for indicating the shoe size:
+<http://www.inria.fr/2007/09/11/humans.rdfs#shoesize>
+
+6) SPARQL query that provides for all people their show size:
+prefix humans: <http://www.inria.fr/2007/09/11/humans.rdfs#>
+
+SELECT * WHERE {
+	?x humans:shoesize ?y
+}
+
+We got 6 answers.
+
+
+7) SPARQL query that provides for all the people their shoe size if this information is available:
+
+prefix humans: <http://www.inria.fr/2007/09/11/humans.rdfs#>
+
+SELECT * WHERE{
+	?x rdf:type humans:Person
+	OPTIONAL { ?x humans:shoesize ?y }
+}
+
+We got 17 answers.
+
+
+8) SPARQL query that provides the people who have a shoe size greater than 8:
+prefix humans: <http://www.inria.fr/2007/09/11/humans.rdfs#>
+
+SELECT * WHERE {
+	?x humans:shoesize ?y
+	FILTER(xsd:integer(?y) > 8)
+}
+
+
+9) SPARQL query that provides the people who have a shoe size > 8 or a shirt size > 12:
+prefix humans: <http://www.inria.fr/2007/09/11/humans.rdfs#>
+
+SELECT * WHERE {
+	?x humans:shoesize ?y
+	?x humans:shirtsize ?t
+	FILTER(xsd:integer(?y) > 8 || xsd:integer(?t) > 12)
+}
+
+
+10)
+Prefix john: <http://www.inria.fr/2007/09/11/humans.rdfs-instances#John>
+
+We use DESCRIBE SPARQL construct to get description of this person.
+
+Prefix humans: <http://www.inria.fr/2007/09/11/humans.rdfs#>
+
+DESCRIBE ?person WHERE {
+	?person humans:name "John" .
+}
+
+
+11) SPARQL query that provides the people that have at least one child:
+prefix humans: <http://www.inria.fr/2007/09/11/humans.rdfs#>
+
+SELECT ?x WHERE{
+	?x humans:hasChild ?y
+}
+
+We got 5 answers and we identified 1 duplicate (Gaston).
+
+To remove duplicates we used this SPARQL query (adding DISTINCT):
+
+prefix humans: <http://www.inria.fr/2007/09/11/humans.rdfs#>
+
+SELECT DISTINCT ?x WHERE {
+	?x humans:hasChild ?y
+}
+
+
+12) SPARQL query that provides all the men who do not have any children:
+prefix humans: <http://www.inria.fr/2007/09/11/humans.rdfs#>
+
+SELECT DISTINCT ?x WHERE {
+	?x rdf:type humans:Man
+	OPTIONAL { ?x humans:hasChild ?y}
+	FILTER (! bound(?y))
+}
+
+
+13) SPARQL query that provides all the people who have more than 100 years old:
+prefix humans: <http://www.inria.fr/2007/09/11/humans.rdfs#>
+
+SELECT DISTINCT ?x WHERE {
+	?x humans:age ?y
+	FILTER(xsd:integer(?y) > 100)
+}
+
+
+14) SPARQL query that provides all the people pairs who have the same shirt size:
+prefix humans: <http://www.inria.fr/2007/09/11/humans.rdfs#>
+
+SELECT ?x ?t WHERE {
+	?x humans:shirtsize ?y
+	?t humans:shirtsize ?z
+	FILTER(xsd:integer(?y) = xsd:integer(?z) && ?x != ?t )
+}
+
+We have duplicates here if we assume that (pierre,karl) = (karl,pierre).
+
+
+15) SPARQL query that provides all the people who are not men:
+prefix humans: <http://www.inria.fr/2007/09/11/humans.rdfs#>
+
+SELECT DISTINCT ?x WHERE {
+	?x rdf:type humans:Person
+	OPTIONAL { ?x rdf:type ?y
+	FILTER ( ?y = <http://www.inria.fr/2007/09/11/humans.rdfs#Man> ) }
+	FILTER ( ! bound(?y) )
+}
+
+We got 12 answers , (Male counts because he can be a male without being a man!)
+
+
+----------------------------------
+	Part III: The RDFS Ontology
+----------------------------------
+
+2) SPARQL query that provides all the classes defined in this ontology:
+
+SELECT DISTINCT ?x WHERE {
+	?x rdf:type rdfs:Class
+}
+
+
+3) SPARQL query that provides all subClassOf relationships defined in this ontology:
+
+SELECT DISTINCT ?x ?t WHERE {
+	?x rdfs:subClassOf ?t
+}
+
+
+4) SPARQL query that provides the definition and the translation of “shoe size”:
+
+SELECT ?def ?fr WHERE {
+	?eng rdfs:label "shoe size"@en .
+	?eng rdfs:label ?fr.
+	?eng rdfs:comment ?def.
+	FILTER ( lang(?fr) = 'fr' && lang(?def)='fr' ).
+}
+
+
+5) SPARQL query that provides all synonyms of the French term “personne”:
+
+SELECT ?syn WHERE {
+	?x rdfs:label "personne"@fr.
+	?x rdfs:label ?syn.
+}
+
+
+--------------------------------------
+	Part IV: Querying the Open Web
+--------------------------------------
+
+1) SPARQL query that counts the number of classes, object properties and datatype properties:
+
+SELECT (count(?x) AS ?class) (count(?t) AS ?objprop) (count(?y) AS ?dataprop) WHERE {{
+	?x rdf:type owl:Class }
+	UNION {
+	?t rdf:type owl:ObjectProperty }
+	UNION {
+	?y rdf:type owl:DatatypeProperty
+}}
+
+Number of classes: 754
+
+Number of object properties: 1103
+
+Number of datatype properties: 1746
+
+
+2) SPARQL query that provides the 20 biggest cities in the world in terms of their population:
+
+PREFIX dbpprop: <http://dbpedia.org/property/>
+PREFIX dbo: <http://dbpedia.org/ontology/>
+
+SELECT DISTINCT ?city (xsd:integer(?number)) WHERE {
+	?city rdf:type dbo:City.
+	?city dbo:populationTotal ?number.
+}
+
+ORDER BY DESC(xsd:integer(?number))
+LIMIT 20
+
+
+3) SPARQL query that provides the countries with 'Republic' in their name that were established before 1920:
+
+PREFIX dbpprop: <http://dbpedia.org/property/>
+PREFIX dbo: <http://dbpedia.org/ontology/>
+
+SELECT DISTINCT ?country ?name ?year WHERE {
+	?country rdf:type dbo:Country .
+	?country rdfs:label ?name .
+	?country dbpprop:yearStart ?year.
+	FILTER (regex(?name, 'Republic') && ?year < 1920
+}
+
+
+4) SPARQL query that provides the number of people who live in the capital of Australia:
+
+PREFIX dbpprop: <http://dbpedia.org/property/>
+PREFIX dbo: <http://dbpedia.org/ontology/>
+
+SELECT DISTINCT xsd:integer(?number) AS ?population WHERE {
+	?country rdf:type dbo:Country .
+	?country rdfs:label ?name .
+	?country dbo:capital ?capital.
+	FILTER (?name = "Australia"@en).
+	?capital dbo:populationTotal ?number
+}
+
+
+5) SPARQL query that provides the name of all lakes in Denmark:
+
+PREFIX dbpprop: <http://dbpedia.org/property/>
+PREFIX dbo: <http://dbpedia.org/ontology/>
+
+SELECT COUNT(?lakes) AS ?Lakes_in_Denmark WHERE {
+	?x rdf:type skos:Concept
+	FILTER (?x = dbc:Lakes_of_Denmark)
+	?lakes dct:subject ?x
+}
+
+The result is: 21 lakes
+
+
+6) SPARQL query that provides the number of employees in Google:
+
+PREFIX dbpprop: <http://dbpedia.org/property/>
+PREFIX dbo: <http://dbpedia.org/ontology/>
+
+SELECT COUNT(?employees) AS ?Nmbr_of_Employees WHERE {
+	?x rdf:type skos:Concept
+	FILTER (?x = dbc:Google_employees)
+	?employees dct:subject ?x
+}
+
+The result is: 219 employees
+
+
+7) SPARQL query that provides the list of songs from Bruce Springsteen released 1980-1990:
+
+SELECT ?song ?release WHERE {
+	?s rdf:type skos:Concept .
+	FILTER (?s = dbc:Bruce_Springsteen_songs) .
+	?song dct:subject ?s .
+	?song dbo:releaseDate ?release .
+	BIND (year(xsd:date(?release)) as ?year ) .
+	FILTER (?year >= 1980 && ?year <= 1990)
+}
+
+
+8) SPARQL query that provides the list of members of Prodigy (the band):
+
+SELECT DISTINCT ?member WHERE {
+	?x rdf:type skos:Concept.
+	FILTER (?x = dbc:The_Prodigy).
+	?band dct:subject ?x .
+	?band dbo:bandMember ?member
+}
+
+
+9) SPARQL query that provides the author of the lyrics for the Polish national anthem:
+
+SELECT ?writer WHERE {
+	?x rdf:type skos:Concept.
+	FILTER (?x = dbc:National_anthem_writers).
+	?writer dct:subject ?x .
+	?writer rdfs:comment ?description .
+	FILTER (regex(str(?description),"Polish national anthem"))
+}
+
+
+10) SPARQL query that tells if Tesla won the Nobel prize in physics:
+
+ASK {
+	?x rdf:type skos:Concept.
+	FILTER (?x = dbc:Nobel_laureates_in_Physics).
+	?laureate dct:subject ?x
+	FILTER (regex(?laureate, 'Tesla'))
+}
+
